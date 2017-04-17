@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>canvas图片编辑器</title>
+		<style type="text/css">
+			*{margin: 0;padding: 0;}
+			body{background: url(bg.jpg);}
+			.container{position: absolute;top: 50px;left: 50px;width: 800px;height: 500px;background-color: #FFF;}
+			.rotate{position: absolute;width: 26px;height: 26px;top: 40px;left: 350px;cursor: pointer;background: url(btn_1.png);}
+			.scale{position: absolute;width: 26px;height: 26px;top: 250px;left: 350px;cursor: pointer;background: url(btn_0.png);}
+			.btn_box{display: none;}
+			.wrap{position: absolute;width: 300px;height: 200px;top: 50px;left: 50px;cursor: pointer;}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<canvas id="canvas" width="800" height="500"></canvas>
+			<div class="wrap"></div>
+			<div class="btn_box">
+				<div class="rotate"></div>
+				<div class="scale"></div>
+			</div>
+		</div>
+		<script src="jquery-1.11.1.min.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			var $scale=$('.scale'), $rotate=$('.rotate'), $wrap=$('.wrap');
+			var canvas=document.getElementById('canvas')
+	        var context = canvas.getContext("2d");   
+	        var show=false;
+	        var w=300, h=200;
+	        var x=150 , y=150, curx, cury;
+	        var centerx=x+w/2, centery=y+h/2;
+	        var cscale=[x+w+13,y+h-13], crotate=[x+w+13,y-13];
+	        var deg=Math.atan((centery-crotate[1])/(crotate[0]-centerx)),curdeg;
+	        var img = new Image(), rotate= new Image(), scale= new Image();  
+	        img.src = "sale.jpg";
+		    rotate.src='btn_1.png';
+		    scale.src='btn_0.png';
+		    img.onload = function(){   
+	            context.drawImage(img,x,y,w,h);   
+	        } 
+	        $scale.css({'top':y+h,'left':x+w})
+    		$rotate.css({'top':y-26,'left':x+w})
+    		$wrap.css({'top':y,'left':x, 'width':w, 'height': h})
+    		
+	        
+	        $('#canvas').click(function(){
+	        	if (show) {
+	        		$('.btn_box').hide();
+	        		clear();
+	        		init();
+	        		show=!show;
+	        	} else{
+	        		$('.btn_box').show();
+					//drawbtn(x, y)
+	        		drawRec(x, y, w, h)
+	        		show=!show;
+	        	}
+	        })
+	        
+	        $scale.mousedown(function(){
+	        	$('.container').mousemove(function(event){
+	        		curx=event.clientX-50;//相对于container的x值
+	        		cury=event.clientY-50;//相对于container的y值
+	        		w=2*(curx-centerx);
+	        		h=2*(cury-centery);
+	        		x=2*centerx-curx;
+	        		y=2*centery-cury;
+	        		centerx=x+w/2;
+	        		centery=y+h/2;
+	        		draw(x, y, w, h);
+	        		drawRec(x, y, w, h	)
+	        		//drawbtn(curx, cury)
+	        		$scale.css({'top':cury,'left':curx})
+        			$rotate.css({'top':cury-h-26,'left':curx})
+	        	}).mouseup(function(){
+	        		$(this).unbind('mousemove')
+	        	})
+	        })
+	        
+	        $wrap.mousedown(function(event){
+	        	var initialx=event.clientX, initialy=event.clientY;
+	        	var gx=x, gy=y;
+	        	$('.container').mousemove(function(event){
+	        		curx=event.clientX;
+	        		cury=event.clientY;
+	        		x=gx+curx-initialx;
+	        		y=gy+cury-initialy;
+	        		centerx=x+w/2;
+	        		centery=y+h/2;
+	        		if (show) {
+	        			draw(x, y, w, h);
+	        			drawRec(x, y, w, h	)
+	        		} else{
+	        			draw(x, y, w, h);
+	        		}
+	        		$scale.css({'top':y+h,'left':x+w})
+        			$rotate.css({'top':y-26,'left':x+w})
+	        	}).mouseup(function(){
+	        		$(this).unbind('mousemove')
+	        	})
+	        })
+	        
+	        $rotate.mousedown(function(){
+	        	var initialx=event.clientX, initialy=event.clientY;
+	        	$('.container').mousemove(function(event){
+	        		curx=event.clientX-50;//相对于container的x值
+	        		cury=event.clientY-50;//相对于container的y值
+	        		curdeg=Math.atan((centery-cury)/(curx-centerx));
+	        		
+//	        		var r=Math.sqrt((crotate[1]-centery)*(crotate[1]-centery)+(crotate[0]-centerx)*(crotate[0]-centerx));
+//	        		var tx=centerx+r*Math.cos(curdeg), ty=centery-r*Math.sin(curdeg);
+//	        		if (curx>centerx) {
+//	        			tx=centerx+r*Math.cos(curdeg), ty=centery-r*Math.sin(curdeg);
+//	        		} else{
+//	        			tx=centerx-r*Math.cos(curdeg), ty=centery+r*Math.sin(curdeg);
+//	        		}
+//	        		console.log(tx, ty)
+	        		
+	        		
+	        		context.translate(centerx, centery)
+	        		context.rotate((deg-curdeg));
+	        		context.translate(-centerx, -centery)
+	        		
+	        		draw(x, y, w, h);
+        			drawRec(x, y, w, h	);
+        			//$rotate.css({'top':ty,'left':tx})
+        			
+        			context.translate(centerx, centery)
+	        		context.rotate(-(deg-curdeg));
+	        		context.translate(-centerx, -centery)
+	        		
+	        		
+	        	}).mouseup(function(){
+	        		$(this).unbind('mousemove')
+	        	})
+	        })
+	        
+	        function draw(x, y, w, h){
+	        	clear();
+	        	context.drawImage(img,x,y,w,h);
+	        	$wrap.css({'top':y,'left':x, 'width':w, 'height': h})
+	        }
+	        
+	        function drawRec(x, y, w, h){
+	        	context.strokeStyle="yellow";/*设置边框*/ 
+				context.lineWidth=5;/*边框的宽度*/ 
+				context.strokeRect(x,y,w,h); 
+	        }
+	        
+	        function drawbtn(x, y){
+	        	context.drawImage(rotate, x+w, y-26, 26, 26)
+	        	context.drawImage(scale, x+w, y+h, 26, 26)
+	        }
+	        
+	        function init(){
+	            context.drawImage(img,x,y,w,h);   
+	        }
+	        
+	        function clear(){
+	        	context.clearRect(0,0,800,500)
+	        }
+		</script>
+	</body>
+</html>

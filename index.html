@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>canvas图片编辑器</title>
+		<style type="text/css">
+			*{margin: 0;padding: 0;}
+			body{background: url(bg.jpg);}
+			.container{position: absolute;top: 50px;left: 50px;width: 800px;height: 500px;background-color: #FFF;}
+			.rotate{position: absolute;width: 26px;height: 26px;top: 40px;left: 350px;cursor: pointer;background: url(btn_1.png);}
+			.scale{position: absolute;width: 26px;height: 26px;top: 250px;left: 350px;cursor: pointer;background: url(btn_0.png);}
+			.btn_box{display: none;}
+			.wrap{position: absolute;width: 300px;height: 200px;top: 50px;left: 50px;cursor: pointer;}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<canvas id="canvas" width="800" height="500"></canvas>
+		</div>
+		<script src="jquery-1.11.1.min.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			var canvas=document.getElementById('canvas')
+	        var context = canvas.getContext("2d");   
+	        var show=false;
+	        var img = new Image(), rotate= new Image(), scale= new Image();   
+	        var w=300, h=200;
+	        var x=150 , y=150, curx, cury;
+	        var centerx=x+w/2, centery=y+h/2;
+	        var crotate=[x+w+13,y-13];
+	        var deg=Math.atan((centery-crotate[1])/(crotate[0]-centerx)),curdeg;
+	        var rotatedeg=0;
+	        var clickinimg=false;
+		    img.src = "sale.jpg";
+		    rotate.src='btn_1.png';
+		    scale.src='btn_0.png';
+		    img.onload = function(){   
+	            context.drawImage(img,x,y,w,h);   
+	        } 
+	        
+	        $('.container').mousedown(function(event){
+	        	if (!clickinimg) {
+	        		if (show) {
+		        		if (rotatedeg==0) {
+		        			draw(x, y, w, h)
+		        		}else{
+		        			context.translate(centerx, centery)
+			        		context.rotate(rotatedeg);
+			        		context.translate(-centerx, -centery)
+			        		
+			        		draw(x, y, w, h)
+		        			
+		        			context.translate(centerx, centery)
+			        		context.rotate(-rotatedeg);
+			        		context.translate(-centerx, -centery)
+		        			
+		        		}
+		        		show=!show;
+		        	} else{
+		        		if (rotatedeg==0) {
+		        			drawbtn(x, y)
+		        			drawRec(x, y, w, h)
+		        		}else{
+		        			context.translate(centerx, centery)
+			        		context.rotate(rotatedeg);
+			        		context.translate(-centerx, -centery)
+			        		
+			        		drawbtn(x, y)
+		        			drawRec(x, y, w, h)
+		        			
+		        			context.translate(centerx, centery)
+			        		context.rotate(-rotatedeg);
+			        		context.translate(-centerx, -centery)
+		        		}
+		        		show=!show;
+		        	}
+	        	}
+	        })
+	        
+	        $('#canvas').mousedown(function(event){
+	        	console.log(event.clientX-50, event.clientY-50);
+	        	//放大缩小
+	        	if (isInScale(event.clientX-50, event.clientY-50)) {
+	        		$('.container').mousemove(function(event){
+		        		curx=event.clientX-50;//相对于container的x值
+		        		cury=event.clientY-50;//相对于container的y值
+		        		
+		        		var a=curx,b=cury;
+		        		if (rotatedeg!=0) {
+			        		var cta1= Math.atan((centery-b)/(a-centerx));
+			        		var r=Math.sqrt((a-centerx)*(a-centerx)+(centery-b)*(centery-b));
+			        		if (a>centerx) {
+			        			a=r*Math.cos(cta1+rotatedeg);
+			        			b=r*Math.sin(cta1+rotatedeg);
+			        		}else{
+			        			a=r*Math.cos(cta1+rotatedeg+Math.PI);
+			        			b=r*Math.sin(cta1+rotatedeg+Math.PI);
+			        		}
+			        		a=centerx+a;
+			        		b=centery-b;
+			        	}else{
+			        	}
+		        		
+		        		w=2*(a-centerx);
+		        		h=2*(b-centery);
+		        		x=2*centerx-a;
+		        		y=2*centery-b;
+		        		centerx=x+w/2;
+		        		centery=y+h/2;
+		        		if (rotatedeg==0) {
+		        			draw(x, y, w, h);
+			        		drawRec(x, y, w, h)
+			        		drawbtn(x, y)
+		        		}else{
+		        			context.translate(centerx, centery)
+			        		context.rotate(rotatedeg);
+			        		context.translate(-centerx, -centery)
+			        		
+			        		draw(x, y, w, h);
+			        		drawRec(x, y, w, h);
+			        		drawbtn(x, y)
+		        			
+		        			context.translate(centerx, centery)
+			        		context.rotate(-rotatedeg);
+			        		context.translate(-centerx, -centery)
+		        		}
+		        		
+		        	}).mouseup(function(){
+		        		$(this).unbind('mousemove')
+	        		})
+	        	}
+	        	//拖动
+	        	if (isInImg(event.clientX-50, event.clientY-50)) {
+	        		clickinimg=true;
+	        		var initialx=event.clientX, initialy=event.clientY;
+	        		var gx=x, gy=y;
+	        		$('.container').mousemove(function(event){
+		        		curx=event.clientX;
+		        		cury=event.clientY;
+		        		x=gx+curx-initialx;
+		        		y=gy+cury-initialy;
+		        		centerx=x+w/2;
+		        		centery=y+h/2;
+		        		if (rotatedeg==0) {
+		        			if (show) {
+			        			draw(x, y, w, h);
+			        			drawRec(x, y, w, h);
+			        			drawbtn(x, y)
+			        		} else{
+			        			draw(x, y, w, h);
+			        		}
+		        		}else{
+		        			context.translate(centerx, centery)
+			        		context.rotate(rotatedeg);
+			        		context.translate(-centerx, -centery)
+			        		
+			        		if (show) {
+			        			draw(x, y, w, h);
+			        			drawRec(x, y, w, h);
+			        			drawbtn(x, y)
+			        		} else{
+			        			draw(x, y, w, h);
+			        		}
+		        			
+		        			context.translate(centerx, centery)
+			        		context.rotate(-rotatedeg);
+			        		context.translate(-centerx, -centery)
+		        		}
+		        		
+		        	}).mouseup(function(){
+		        		clickinimg=false;
+		        		$(this).unbind('mousemove')
+	        		})
+	        	}
+	        	//旋转
+	        	if (isInRotate(event.clientX-50, event.clientY-50)) {
+	        		$('.container').mousemove(function(event){
+	        			curx=event.clientX-50;//相对于container的x值
+	        			cury=event.clientY-50;//相对于container的y值
+	        			curdeg=Math.atan((centery-cury)/(curx-centerx));
+	        			if (curx>centerx) {
+	        				rotatedeg=deg-curdeg;
+	        			}else{
+	        				rotatedeg=-Math.PI-curdeg+deg;
+	        			}
+	        			
+	        			context.translate(centerx, centery)
+		        		context.rotate(rotatedeg);
+		        		context.translate(-centerx, -centery)
+		        		
+		        		draw(x, y, w, h);
+	        			drawRec(x, y, w, h);
+	        			drawbtn(x,y)
+	        			
+	        			context.translate(centerx, centery)
+		        		context.rotate(-rotatedeg);
+		        		context.translate(-centerx, -centery)
+		        		
+		        	}).mouseup(function(){
+		        		$(this).unbind('mousemove')
+	        		})
+	        	}
+	        	
+	        })
+	        
+	        
+	        function draw(x, y, w, h){
+	        	clear();
+	        	context.drawImage(img,x,y,w,h);
+	        }
+	        
+	        function drawRec(x, y, w, h){
+	        	context.strokeStyle="yellow";/*设置边框*/ 
+				context.lineWidth=5;/*边框的宽度*/ 
+				context.strokeRect(x,y,w,h); 
+	        }
+	        
+	        function drawbtn(x, y){
+	        	context.drawImage(rotate, x+w, y-26, 26, 26)
+	        	context.drawImage(scale, x+w, y+h, 26, 26)
+	        }
+	        
+	        function isInImg(a, b){
+	        	
+	        	if (a>x && a<x+w) {
+	        		if (b>y && b<y+h) {
+	        			return true;
+	        		}else{
+	        			return false;
+	        		}
+	        	} else{
+	        		return false;
+	        	}
+	        }
+	        
+	        function isInRotate(a, b){
+	        	if (rotatedeg!=0) {
+	        		var cta1= Math.atan((centery-b)/(a-centerx));
+	        		var r=Math.sqrt((a-centerx)*(a-centerx)+(centery-b)*(centery-b));
+	        		if (a>centerx) {
+	        			a=r*Math.cos(cta1+rotatedeg);
+	        			b=r*Math.sin(cta1+rotatedeg);
+	        		}else{
+	        			a=r*Math.cos(cta1+rotatedeg+Math.PI);
+	        			b=r*Math.sin(cta1+rotatedeg+Math.PI);
+	        		}
+	        		a=centerx+a;
+	        		b=centery-b;
+	        		if (a>x+w && a<x+w+26) {
+		        		if (b>y-26 && b<y) {
+		        			return true;
+		        		}else{
+		        			return false;
+		        		}
+		        	} else{
+		        		return false;
+		        	}
+	        	}else{
+	        		if (a>x+w && a<x+w+26) {
+		        		if (b>y-26 && b<y) {
+		        			return true;
+		        		}else{
+		        			return false;
+		        		}
+		        	} else{
+		        		return false;
+		        	}
+	        	}
+	        	
+	        }
+	        
+	        function isInScale(a, b){
+	        	if (rotatedeg!=0) {
+	        		var cta1= Math.atan((centery-b)/(a-centerx));
+	        		var r=Math.sqrt((a-centerx)*(a-centerx)+(centery-b)*(centery-b));
+	        		if (a>centerx) {
+	        			a=r*Math.cos(cta1+rotatedeg);
+	        			b=r*Math.sin(cta1+rotatedeg);
+	        		}else{
+	        			a=r*Math.cos(cta1+rotatedeg+Math.PI);
+	        			b=r*Math.sin(cta1+rotatedeg+Math.PI);
+	        		}
+	        		a=centerx+a;
+	        		b=centery-b;
+	        		if (a>x+w && a<x+w+26) {
+		        		if (b>y+h && b<y+h+26) {
+		        			return true;
+		        		}else{
+		        			return false;
+		        		}
+		        	} else{
+		        		return false;
+		        	}
+	        	}else{
+	        		if (a>x+w && a<x+w+26) {
+		        		if (b>y+h && b<y+h+26) {
+		        			return true;
+		        		}else{
+		        			return false;
+		        		}
+		        	} else{
+		        		return false;
+		        	}
+	        	}
+	        }
+	        
+	        
+	        function clear(){
+	        	context.clearRect(-100,-100,8000,5000)
+	        }
+		</script>
+	</body>
+</html>
